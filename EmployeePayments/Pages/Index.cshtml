@@ -5,6 +5,22 @@
 }
 
 <form method="post" enctype="multipart/form-data">
-    <input type="file" asp-for="Upload" />
+    <input type="file" asp-for="UploadFile" />
     <input type="submit" />
 </form>
+
+<table class="table">
+    <thead>
+    </thead>
+    <tbody>
+        @if (Model.Test != null)
+        {
+            foreach (var contact in Model.Test)
+            {
+                <tr>
+                    <td> @contact </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
