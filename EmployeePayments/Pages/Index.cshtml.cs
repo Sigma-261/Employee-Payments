@@ -30,19 +30,28 @@ public class IndexModel : PageModel
     [BindProperty]
     public IFormFile UploadFile { get; set; }
 
-    public List<string> Test { get; set; }
+    public string Error { get; set; } = "";
+
+    public List<PayrollInfo> Result { get; set; }
 
     public async Task<IActionResult> OnPostAsync()
     {
         try
         {
+            Console.WriteLine("hello world");
+
             var empPayrolls = _parser.ParseExcel(UploadFile);
             //var result = await _sender.SendPaymentMessageAsync(empPayrolls);
-            //Test = result;
+            Result = new List<PayrollInfo>()
+            {
+                new(){IsSuccess = true, Employee = "Иванов Иван Иванович", Payroll = "НУЖНО ЭТО ОТПРАВИТЬ"},
+                new(){IsSuccess = false, Employee = "Петров Петр Петрович", Error = "ОШИБКА!", Payroll = "НУЖНО ЭТО ОТПРАВИТЬ"},
+            };
         }
         catch(Exception ex)
         {
             Console.WriteLine(ex);
+            Error = ex.Message;
         }
 
         return Page();

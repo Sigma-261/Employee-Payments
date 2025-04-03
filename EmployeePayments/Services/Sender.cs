@@ -34,13 +34,8 @@ public class Sender : ISender
 
         var empInfos = JsonConvert.DeserializeObject<List<EmployeeInfo>>(empInfosResponse);
 
-        if (empInfos is null)
-            throw new Exception("Error");
-
         var botId = empInfos.FirstOrDefault(x => x.Username == "salarybot")?.Id;
 
-        if (botId is null)
-            throw new Exception("Error");
 
         var empPayrollInfo = new List<string>();
 

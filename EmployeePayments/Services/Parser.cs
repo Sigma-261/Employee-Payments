@@ -27,13 +27,24 @@ public class Parser : IParser
 
         var workbook = new XLWorkbook(file.OpenReadStream());
         ws = workbook.Worksheet(1);
-
-        if (ws is null)
-            throw new Exception("Error");
-
         bool isGPH = false;
 
         var empPayrolls = new List<EmployeePayroll>();
+
+        while (true)
+        {
+            var empName = ws.Cell(1, _empIndex).Value.ToString();
+            var test = ws.Column(_empIndex);
+            if (ws.Cell(1, _empIndex).Active)
+            {
+                Console.WriteLine("1");
+            }
+            else
+            {
+                Console.WriteLine("0");
+            }
+            _empIndex++;
+        }
 
         while (true)
         {

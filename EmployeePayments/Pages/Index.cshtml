@@ -3,24 +3,85 @@
 @{
     ViewData["Title"] = "Home page";
 }
+<div class="wrapper">
+    <header>Загрузить файл</header>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" class="input-file" asp-for="UploadFile" hidden />
+        <input type="submit" id="btnUpload" value="Upload" asp-page-handler="Upload" hidden />
+        <i class="bi bi-file-earmark-arrow-up"></i>
+        <p> Загрузить файл</p>
+    </form>
 
-<form method="post" enctype="multipart/form-data">
-    <input type="file" asp-for="UploadFile" />
-    <input type="submit" />
-</form>
-
-<table class="table">
-    <thead>
-    </thead>
-    <tbody>
-        @if (Model.Test != null)
+    <section class="results">
+        @if (Model.Result != null)
         {
-            foreach (var contact in Model.Test)
+            var iconStyle = "";
+            var iconType = "";
+            var visibilityState = "";
+            var empStyle = "";
+            foreach (var contact in Model.Result)
             {
-                <tr>
-                    <td> @contact </td>
-                </tr>
+                @if (contact.IsSuccess == false)
+                {
+                    iconStyle = "color:red;";
+                    iconType = "bi bi-x-circle";
+                    visibilityState = "visibility: visible;";
+                    empStyle = "";
+                }
+                else
+                {
+                    iconStyle = "color:green";
+                    iconType = "bi bi-check-circle";
+                    visibilityState = "visibility: collapse;";
+                    empStyle = "margin-top: 7px;";
+                }
+                <li class="row">
+                    <i style="@iconStyle" class="@iconType"></i>
+                    <div class="details">
+                        <span class="employee" style="@empStyle">@contact.Employee</span>
+                        <span class="error" style="@visibilityState">@contact.Error</span>
+                    </div>
+                    <div class="addition">
+                        <input hidden="hidden" type="text" value="@contact.Payroll" id="payroll">
+                        <input hidden="hidden" type="text" value="@contact.Employee" id="employee">
+                        <button class="copy" onclick="myFunction()">Выписка</button>
+                    </div>
+                </li>
             }
         }
-    </tbody>
-</table>
+    </section>
+</div>
+
+<script>
+    function myFunction() {
+      // Get the text field
+      var copyText = document.getElementById("payroll");
+      var employee = document.getElementById("employee");
+
+      // Select the text field
+      copyText.select();
+      copyText.setSelectionRange(0, 99999); // For mobile devices
+
+      // Copy the text inside the text field
+      navigator.clipboard.writeText(copyText.value);
+
+      // Alert the copied text
+      alert("Скопирована выписка для : " + employee.value);
+    }
+</script>
+
+<script>
+    const form = document.querySelector("form");
+    fileInput = form.querySelector(".input-file");
+
+    form.addEventListener("click", ()=> {
+        fileInput.click();
+    });
+
+    fileInput.onchange = () =>{
+        document.getElementById("btnUpload").click();
+    }
+</script>
+
+<h1>@Model.Error</h1>
+
