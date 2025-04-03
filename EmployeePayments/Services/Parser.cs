@@ -11,8 +11,8 @@ namespace EmployeePayments.Services;
 public class Parser : IParser
 {
     private int _empIndex = 4;
-    private int _rewardIndex = 17;
-    private int _paymentIndex = 26;
+    private int _rewardIndex = 18;
+    private int _paymentIndex = 27;
 
     private IXLWorksheet? ws;
 
@@ -21,7 +21,7 @@ public class Parser : IParser
     /// </summary>
     /// <param name="file">Документ с данными о выплатах</param>
     /// <returns>Список выплат сотрудникам</returns>
-    public List<EmployeePayroll> ParseExcel(IFormFile file)
+    public List<EmployeePayment> ParseExcel(IFormFile file)
     {
         using var fileStream = file.OpenReadStream();
 
@@ -29,28 +29,18 @@ public class Parser : IParser
         ws = workbook.Worksheet(1);
         bool isGPH = false;
 
-        var empPayrolls = new List<EmployeePayroll>();
-
+        var empPayrolls = new List<EmployeePayment>();
+        var hours = string.Format("{0:f2}", (Convert.ToInt32(ws.Cell(6, 1).GetFormattedString()) * 8));
         while (true)
         {
-            var empName = ws.Cell(1, _empIndex).Value.ToString();
-            var test = ws.Column(_empIndex);
-            if (ws.Cell(1, _empIndex).Active)
+            if(ws.Column(_empIndex).IsHidden == true)
             {
-                Console.WriteLine("1");
+                _empIndex++;
+                continue;
             }
-            else
-            {
-                Console.WriteLine("0");
-            }
-            _empIndex++;
-        }
 
-        while (true)
-        {
             //Тут должно быть не фио, а имя на маттермосте или почта
             var empName = ws.Cell(1, _empIndex).Value.ToString();
-
             if (empName == "")
             {
                 if (!isGPH)
@@ -62,17 +52,24 @@ public class Parser : IParser
                 break;
             }
 
-            empPayrolls.Add(new EmployeePayroll()
+            var profit = Convert.ToDecimal(ws.Cell(25, _empIndex).GetString());
+            var tax = Convert.ToDecimal(ws.Cell(27, _empIndex).GetString());
+
+            var profitWithTask = string.Format("{0:C2}", profit - tax);
+
+            empPayrolls.Add(new EmployeePayment()
             {
                 Name = empName,
                 Month = ws.Cell(2, 1).Value.ToString(),
-                Hours = ws.Cell(2, _empIndex).GetFormattedString(),
-                Salary = ws.Cell(10, _empIndex).GetFormattedString(),
-                Profit = ws.Cell(24, _empIndex).GetFormattedString(),
+                Hours = hours,
+                BaseSalary = ws.Cell(11, _empIndex).GetFormattedString(),
+                Salary = ws.Cell(25, _empIndex).GetFormattedString(),
+                ProfitWithTax = profitWithTask,
                 Bonuses = GetBonuses(),
                 Rewards = GetRewards(),
-                Payments = GetPayments(),
+                PaymentDistribution = GetPayments(),
                 Production = isGPH == true ? "" : $"\r\nВыработка за месяц: {ws.Cell(5, _empIndex).GetFormattedString()} ставки",
+                ProductionWithBonus = isGPH == true ? "" : $"\r\nВыработка за месяц с учётом больничных и отпускных: {ws.Cell(9, _empIndex).GetFormattedString()} ставок",
             });
 
             _empIndex++;

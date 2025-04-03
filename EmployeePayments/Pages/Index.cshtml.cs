@@ -32,7 +32,7 @@ public class IndexModel : PageModel
 
     public string Error { get; set; } = "";
 
-    public List<PayrollInfo> Result { get; set; }
+    public List<ShippingInfo> Result { get; set; }
 
     public async Task<IActionResult> OnPostAsync()
     {
@@ -41,12 +41,7 @@ public class IndexModel : PageModel
             Console.WriteLine("hello world");
 
             var empPayrolls = _parser.ParseExcel(UploadFile);
-            //var result = await _sender.SendPaymentMessageAsync(empPayrolls);
-            Result = new List<PayrollInfo>()
-            {
-                new(){IsSuccess = true, Employee = "Иванов Иван Иванович", Payroll = "НУЖНО ЭТО ОТПРАВИТЬ"},
-                new(){IsSuccess = false, Employee = "Петров Петр Петрович", Error = "ОШИБКА!", Payroll = "НУЖНО ЭТО ОТПРАВИТЬ"},
-            };
+            Result = await _sender.SendPaymentMessageAsync(empPayrolls);
         }
         catch(Exception ex)
         {

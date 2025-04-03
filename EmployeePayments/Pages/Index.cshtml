@@ -35,6 +35,9 @@
                     visibilityState = "visibility: collapse;";
                     empStyle = "margin-top: 7px;";
                 }
+
+                var employeePayment = contact.Employee+"_payment";
+
                 <li class="row">
                     <i style="@iconStyle" class="@iconType"></i>
                     <div class="details">
@@ -42,9 +45,9 @@
                         <span class="error" style="@visibilityState">@contact.Error</span>
                     </div>
                     <div class="addition">
-                        <input hidden="hidden" type="text" value="@contact.Payroll" id="payroll">
-                        <input hidden="hidden" type="text" value="@contact.Employee" id="employee">
-                        <button class="copy" onclick="myFunction()">Выписка</button>
+                        <input hidden="hidden" type="text" value="@contact.Payroll" id="@employeePayment">
+                        <input hidden="hidden" type="text" value="@contact.Employee" id="@contact.Employee">
+                        <button class="copy" onclick="myFunction('@contact.Employee', '@employeePayment')">Выписка</button>
                     </div>
                 </li>
             }
@@ -53,17 +56,19 @@
 </div>
 
 <script>
-    function myFunction() {
+    function myFunction(emp, empPayment) {
       // Get the text field
-      var copyText = document.getElementById("payroll");
-      var employee = document.getElementById("employee");
+      var payment = document.getElementById(empPayment);
+      var employee = document.getElementById(emp);
+      console.log(payment.value)
 
       // Select the text field
-      copyText.select();
-      copyText.setSelectionRange(0, 99999); // For mobile devices
+
+      payment.select();
+      payment.setSelectionRange(0, 99999); // For mobile devices
 
       // Copy the text inside the text field
-      navigator.clipboard.writeText(copyText.value);
+      navigator.clipboard.writeText(payment.value);
 
       // Alert the copied text
       alert("Скопирована выписка для : " + employee.value);

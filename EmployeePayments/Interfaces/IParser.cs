@@ -4,5 +4,5 @@ namespace EmployeePayments.Interfaces;
 
 public interface IParser
 {
-    public abstract List<EmployeePayroll> ParseExcel(IFormFile file);
+    public abstract List<EmployeePayment> ParseExcel(IFormFile file);
 }

@@ -25,7 +25,7 @@ public class Sender : ISender
     /// Отправка сообщений о выплатах сотрудникам
     /// </summary>
     /// <returns></returns>
-    public async Task<List<string>> SendPaymentMessageAsync(List<EmployeePayroll> empPayrolls)
+    public async Task<List<ShippingInfo>> SendPaymentMessageAsync(List<EmployeePayment> empPayrolls)
     {
         var httpClient = _httpClientFactory.CreateClient("PaymentBot");
 
@@ -34,19 +34,41 @@ public class Sender : ISender
 
         var empInfos = JsonConvert.DeserializeObject<List<EmployeeInfo>>(empInfosResponse);
 
-        var botId = empInfos.FirstOrDefault(x => x.Username == "salarybot")?.Id;
+        var botId = empInfos?.FirstOrDefault(x => x.Username == "salarybot")?.Id;
 
-
-        var empPayrollInfo = new List<string>();
+        var empPayrollInfo = new List<ShippingInfo>();
 
         foreach(var empPayroll in empPayrolls)
         {
-            // Если что, то поменять на почту
+            string message = $"""
+                   ТЕСТОВОЕ СООБЩЕНИЕ
+                   #ЗарплатаЗа{empPayroll.Month}
+
+                   Общее количество рабочих часов в прошедший месяц: {empPayroll.Hours} ч{empPayroll.Production} 
+                   Основная компонента зарплаты: {empPayroll.BaseSalary}
+                   {empPayroll.Bonuses}{empPayroll.Rewards}
+                   **Итого начисленная зарплата:** {empPayroll.Salary}
+                   
+                   **Итого зарплата к перечислению** (начисленнная зарплата минус НДФЛ 13 %): {empPayroll.ProfitWithTax}
+
+                   | Распределение выплат ||
+                   | --- | --: |
+                   {empPayroll.PaymentDistribution}
+                   """;
+
             var userId = empInfos.FirstOrDefault(x => x.Username == empPayroll.Name)?.Id;
 
             if (userId is null)
             {
-                empPayrollInfo.Add($"Сотрудник {empPayroll.Name} не найден!");
+                empPayrollInfo.Add(new ShippingInfo()
+                {
+                    Employee = empPayroll.Name,
+                    Payroll = message,
+                    IsSuccess = false,
+                    Error = "Сотрудник не найден!"
+
+                });
+
                 continue;
             }
 
@@ -59,39 +81,25 @@ public class Sender : ISender
 
             var channelId = JObject.Parse(createChannelResponse)["id"].ToString();
 
-            string message = $"""
-                   ТЕСТОВОЕ СООБЩЕНИЕ
-                   #ЗарплатаЗа{empPayroll.Month}
-
-                   Общее количество рабочих часов в прошедший месяц: {empPayroll.Hours} ч{empPayroll.Production}
-                   Основная компонента зарплаты: {empPayroll.Salary}
-                   {empPayroll.Bonuses}{empPayroll.Rewards}
-                   **Итого начисленная зарплата:** {empPayroll.Profit}
-
-                   | Распределение выплат ||
-                   | --- | --: |
-                   {empPayroll.Payments}
-                   """;
-
             PayrollMessage payrollMessage = new PayrollMessage() 
             { 
                 Channel_id = channelId, 
                 Message = message
             };
 
-            var sendMessage = await 
+            var sendMessage = await
                 httpClient.PostAsync("posts",
                     JsonContent.Create(payrollMessage));
 
-            var sendMessageResponse = await sendMessage.Content.ReadAsStringAsync();
-
-            if (sendMessage.IsSuccessStatusCode == false)
+            empPayrollInfo.Add(new ShippingInfo()
             {
-                empPayrollInfo.Add($"Не удалось отправить сообщение сотруднику {empPayroll.Name}");
-                continue;
-            }
-
-            empPayrollInfo.Add($"Сообщение отправлено успешно сотруднику {empPayroll.Name}");
+                Employee = empPayroll.Name,
+                Payroll = message,
+                IsSuccess = sendMessage.IsSuccessStatusCode,
+                Error = sendMessage.IsSuccessStatusCode == true
+                    ? ""
+                    : sendMessage.Content.ReadAsAsync<HttpError>().ToString() ?? ""
+            });
         }
 
         return empPayrollInfo;
