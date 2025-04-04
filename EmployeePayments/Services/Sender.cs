@@ -25,48 +25,31 @@ public class Sender : ISender
     /// Отправка сообщений о выплатах сотрудникам
     /// </summary>
     /// <returns></returns>
-    public async Task<List<ShippingInfo>> SendPaymentMessageAsync(List<EmployeePayment> empPayrolls)
+    public async Task<List<ShippingInfo>> SendPaymentMessageAsync(List<EmployeePayroll> empPayrolls)
     {
         var httpClient = _httpClientFactory.CreateClient("PaymentBot");
 
         HttpResponseMessage empInfosMessage = await httpClient.GetAsync("users");
         var empInfosResponse = await empInfosMessage.Content.ReadAsStringAsync();
 
-        var empInfos = JsonConvert.DeserializeObject<List<EmployeeInfo>>(empInfosResponse);
+        var emps = JsonConvert.DeserializeObject<List<EmployeeInfo>>(empInfosResponse);
 
-        var botId = empInfos?.FirstOrDefault(x => x.Username == "salarybot")?.Id;
+        var botId = emps?.FirstOrDefault(x => x.Username == "salarybot")?.Id;
 
         var empPayrollInfo = new List<ShippingInfo>();
 
         foreach(var empPayroll in empPayrolls)
         {
-            string message = $"""
-                   ТЕСТОВОЕ СООБЩЕНИЕ
-                   #ЗарплатаЗа{empPayroll.Month}
-
-                   Общее количество рабочих часов в прошедший месяц: {empPayroll.Hours} ч{empPayroll.Production} 
-                   Основная компонента зарплаты: {empPayroll.BaseSalary}
-                   {empPayroll.Bonuses}{empPayroll.Rewards}
-                   **Итого начисленная зарплата:** {empPayroll.Salary}
-                   
-                   **Итого зарплата к перечислению** (начисленнная зарплата минус НДФЛ 13 %): {empPayroll.ProfitWithTax}
-
-                   | Распределение выплат ||
-                   | --- | --: |
-                   {empPayroll.PaymentDistribution}
-                   """;
-
-            var userId = empInfos.FirstOrDefault(x => x.Username == empPayroll.Name)?.Id;
+            var userId = emps?.FirstOrDefault(x => x.Username == empPayroll.Name)?.Id;
 
             if (userId is null)
             {
                 empPayrollInfo.Add(new ShippingInfo()
                 {
                     Employee = empPayroll.Name,
-                    Payroll = message,
+                    Payroll = empPayroll.Payroll,
                     IsSuccess = false,
                     Error = "Сотрудник не найден!"
-
                 });
 
                 continue;
@@ -79,26 +62,34 @@ public class Sender : ISender
 
             var createChannelResponse = await createChannelMessage.Content.ReadAsStringAsync();
 
-            var channelId = JObject.Parse(createChannelResponse)["id"].ToString();
+            var channelId = JObject.Parse(createChannelResponse)["id"]?.ToString();
 
-            PayrollMessage payrollMessage = new PayrollMessage() 
+            var payrollMessage = new
             { 
                 Channel_id = channelId, 
-                Message = message
+                Message = empPayroll.Payroll
             };
 
-            var sendMessage = await
-                httpClient.PostAsync("posts",
-                    JsonContent.Create(payrollMessage));
+            //var sendMessage = await 
+            //    httpClient.PostAsync("posts",
+            //        JsonContent.Create(payrollMessage));
+
+            //empPayrollInfo.Add(new ShippingInfo()
+            //{
+            //    Employee = empPayroll.Name,
+            //    Payroll = message,
+            //    IsSuccess = sendMessage.IsSuccessStatusCode,
+            //    Error = sendMessage.IsSuccessStatusCode == true 
+            //        ? "" 
+            //        : sendMessage.Content.ReadAsAsync<HttpError>().ToString() ?? ""
+            //});
 
             empPayrollInfo.Add(new ShippingInfo()
             {
                 Employee = empPayroll.Name,
-                Payroll = message,
-                IsSuccess = sendMessage.IsSuccessStatusCode,
-                Error = sendMessage.IsSuccessStatusCode == true
-                    ? ""
-                    : sendMessage.Content.ReadAsAsync<HttpError>().ToString() ?? ""
+                Payroll = empPayroll.Payroll,
+                IsSuccess = true,
+                Error = ""
             });
         }
 

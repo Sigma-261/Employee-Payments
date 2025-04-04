@@ -9,7 +9,7 @@
         <input type="file" class="input-file" asp-for="UploadFile" hidden />
         <input type="submit" id="btnUpload" value="Upload" asp-page-handler="Upload" hidden />
         <i class="bi bi-file-earmark-arrow-up"></i>
-        <p> Загрузить файл</p>
+        <p id="Test"> Загрузить файл</p>
     </form>
 
     <section class="results">
@@ -45,9 +45,11 @@
                         <span class="error" style="@visibilityState">@contact.Error</span>
                     </div>
                     <div class="addition">
-                        <input hidden="hidden" type="text" value="@contact.Payroll" id="@employeePayment">
-                        <input hidden="hidden" type="text" value="@contact.Employee" id="@contact.Employee">
+                        <textarea hidden="hidden" id="@employeePayment">@contact.Payroll</textarea>
+                        <input hidden type="text" value="@contact.Employee" id="@contact.Employee">
                         <button class="copy" onclick="myFunction('@contact.Employee', '@employeePayment')">Выписка</button>
+
+                        <div id="snackbar">Скопировано</div>
                     </div>
                 </li>
             }
@@ -70,20 +72,37 @@
       // Copy the text inside the text field
       navigator.clipboard.writeText(payment.value);
 
-      // Alert the copied text
-      alert("Скопирована выписка для : " + employee.value);
+          // Get the snackbar DIV
+    var x = document.getElementById("snackbar");
+
+    // Add the "show" class to DIV
+    x.className = "show";
+
+    // After 3 seconds, remove the show class from DIV
+    setTimeout(function(){ x.className = x.className.replace("show", ""); }, 1000);
     }
 </script>
 
 <script>
     const form = document.querySelector("form");
     fileInput = form.querySelector(".input-file");
+    filename = "";
 
     form.addEventListener("click", ()=> {
         fileInput.click();
     });
 
     fileInput.onchange = () =>{
+
+        if (fileInput.value) {
+            startIndex = (fileInput.value.indexOf('\\') >= 0 ? fileInput.value.lastIndexOf('\\') : fileInput.value.lastIndexOf('/'));
+            filename = fileInput.value.substring(startIndex);
+            if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+                filename = filename.substring(1);
+            }
+        }
+
+        document.getElementById('Test').innerText = filename;
         document.getElementById("btnUpload").click();
     }
 </script>

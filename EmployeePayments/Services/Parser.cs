@@ -11,8 +11,6 @@ namespace EmployeePayments.Services;
 public class Parser : IParser
 {
     private int _empIndex = 4;
-    private int _rewardIndex = 18;
-    private int _paymentIndex = 27;
 
     private IXLWorksheet? ws;
 
@@ -21,61 +19,86 @@ public class Parser : IParser
     /// </summary>
     /// <param name="file">Документ с данными о выплатах</param>
     /// <returns>Список выплат сотрудникам</returns>
-    public List<EmployeePayment> ParseExcel(IFormFile file)
+    public List<EmployeePayroll> ParseExcel(IFormFile file)
     {
         using var fileStream = file.OpenReadStream();
 
         var workbook = new XLWorkbook(file.OpenReadStream());
         ws = workbook.Worksheet(1);
+
         bool isGPH = false;
 
-        var empPayrolls = new List<EmployeePayment>();
-        var hours = string.Format("{0:f2}", (Convert.ToInt32(ws.Cell(6, 1).GetFormattedString()) * 8));
-        while (true)
-        {
-            if(ws.Column(_empIndex).IsHidden == true)
-            {
-                _empIndex++;
-                continue;
-            }
+        var empPayrolls = new List<EmployeePayroll>();
 
-            //Тут должно быть не фио, а имя на маттермосте или почта
-            var empName = ws.Cell(1, _empIndex).Value.ToString();
+        for (;; _empIndex++)
+        {
+            if (ws.Column(_empIndex).IsHidden == true)
+                continue;
+
+            var empName = ws.Cell(1, _empIndex).GetString();
+
             if (empName == "")
             {
                 if (!isGPH)
                 {
-                    _empIndex++;
                     isGPH = true;
                     continue;
                 }
                 break;
             }
 
-            var profit = Convert.ToDecimal(ws.Cell(25, _empIndex).GetString());
-            var tax = Convert.ToDecimal(ws.Cell(27, _empIndex).GetString());
-
-            var profitWithTask = string.Format("{0:C2}", profit - tax);
-
-            empPayrolls.Add(new EmployeePayment()
+            empPayrolls.Add(new EmployeePayroll()
             {
                 Name = empName,
-                Month = ws.Cell(2, 1).Value.ToString(),
-                Hours = hours,
-                BaseSalary = ws.Cell(11, _empIndex).GetFormattedString(),
-                Salary = ws.Cell(25, _empIndex).GetFormattedString(),
-                ProfitWithTax = profitWithTask,
-                Bonuses = GetBonuses(),
-                Rewards = GetRewards(),
-                PaymentDistribution = GetPayments(),
-                Production = isGPH == true ? "" : $"\r\nВыработка за месяц: {ws.Cell(5, _empIndex).GetFormattedString()} ставки",
-                ProductionWithBonus = isGPH == true ? "" : $"\r\nВыработка за месяц с учётом больничных и отпускных: {ws.Cell(9, _empIndex).GetFormattedString()} ставок",
+                Payroll = GetPayroll(isGPH)
             });
-
-            _empIndex++;
         }
 
         return empPayrolls;
+    }
+
+    /// <summary>
+    /// Получение плтежки сотрудника
+    /// </summary>
+    /// <param name="isGPH">Является ли сотрудник ГПХ</param>
+    /// <returns>Платежка</returns>
+    private string GetPayroll(bool isGPH)
+    {
+        var hours = string.Format("{0:f2}", (Convert.ToInt32(ws.Cell(6, 1).GetFormattedString()) * 8));
+
+        var profit = Convert.ToDecimal(ws.Cell(25, _empIndex).GetString());
+        var tax = Convert.ToDecimal(ws.Cell(27, _empIndex).GetString());
+
+        var profitWithTask = string.Format("{0:C2}", profit - tax);
+
+        var month = ws.Cell(2, 1).Value.ToString();
+        var baseSalary = ws.Cell(11, _empIndex).GetFormattedString();
+        var salary = ws.Cell(25, _empIndex).GetFormattedString();
+        var bonuses = GetBonuses();
+        var rewards = GetRewards();
+        var paymentDistribution = GetPayments();
+        var production = isGPH == false 
+            ? $"\r\nВыработка за месяц: {ws.Cell(5, _empIndex).GetFormattedString()} ставки"
+            : "";
+        var productionWithBonus = isGPH == false 
+            ? $"\r\nВыработка за месяц с учётом больничных и отпускных: {ws.Cell(9, _empIndex).GetFormattedString()} ставок"
+            : "";
+
+        return $"""
+                   ТЕСТОВОЕ СООБЩЕНИЕ
+                   #ЗарплатаЗа{month}
+
+                   Общее количество рабочих часов в прошедший месяц: {hours} ч{production}{productionWithBonus}
+                   Основная компонента зарплаты: {baseSalary}
+                   {bonuses}{rewards}
+                   **Итого начисленная зарплата:** {salary}
+                   
+                   **Итого зарплата к перечислению** (начисленнная зарплата минус НДФЛ 13 %): {profitWithTask}
+
+                   | Распределение выплат ||
+                   | --- | --: |
+                   {paymentDistribution}
+                   """;
     }
 
     /// <summary>
@@ -107,25 +130,25 @@ public class Parser : IParser
     private string GetRewards()
     {
         var rewards = "";
+        var rewardIndex = 18;
+
         while (true)
         {
-            var project = ws!.Cell(_rewardIndex, 2).GetFormattedString();
+            var project = ws!.Cell(rewardIndex, 2).GetFormattedString();
 
             if (project == "")
                 break;
 
-            var reward = ws!.Cell(_rewardIndex, _empIndex).GetFormattedString();
+            var reward = ws!.Cell(rewardIndex, _empIndex).GetFormattedString();
 
             if (reward != "")
                 rewards += $"\r\nПремия за {project}: {reward}";
 
-            _rewardIndex++;
+            rewardIndex++;
         }
 
         if (rewards != "")
-        {
             rewards += "\r\n";
-        }
 
         return rewards;
     }
@@ -137,20 +160,20 @@ public class Parser : IParser
     private string GetPayments()
     {
         var payments = "";
-
+        var paymentIndex = 27;
         while (true)
         {
-            var paymentName = ws!.Cell(_paymentIndex, 2).GetFormattedString();
+            var paymentName = ws!.Cell(paymentIndex, 2).GetFormattedString();
 
             if (paymentName == "")
                 break;
 
-            var payment = ws!.Cell(_paymentIndex, _empIndex).GetFormattedString();
+            var payment = ws!.Cell(paymentIndex, _empIndex).GetFormattedString();
 
             if (payment != "")
                 payments += $"| {paymentName} | {payment} |\r\n";
 
-            _paymentIndex++;
+            paymentIndex++;
         }
 
         return payments;
