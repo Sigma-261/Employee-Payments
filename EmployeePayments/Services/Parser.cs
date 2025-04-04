@@ -85,7 +85,6 @@ public class Parser : IParser
             : "";
 
         return $"""
-                   ТЕСТОВОЕ СООБЩЕНИЕ
                    #ЗарплатаЗа{month}
 
                    Общее количество рабочих часов в прошедший месяц: {hours} ч{production}{productionWithBonus}

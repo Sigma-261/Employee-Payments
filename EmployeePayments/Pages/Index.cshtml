@@ -6,7 +6,7 @@
 <div class="wrapper">
     <header>Загрузить файл</header>
     <form method="post" enctype="multipart/form-data">
-        <input type="file" class="input-file" asp-for="UploadFile" hidden />
+        <input type="file" accept=".xlsx" class="input-file" asp-for="UploadFile" hidden />
         <input type="submit" id="btnUpload" value="Upload" asp-page-handler="Upload" hidden />
         <i class="bi bi-file-earmark-arrow-up"></i>
         <p id="Test"> Загрузить файл</p>

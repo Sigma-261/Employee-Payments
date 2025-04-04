@@ -38,8 +38,6 @@ public class IndexModel : PageModel
     {
         try
         {
-            Console.WriteLine("hello world");
-
             var empPayrolls = _parser.ParseExcel(UploadFile);
             Result = await _sender.SendPaymentMessageAsync(empPayrolls);
         }

@@ -70,26 +70,18 @@ public class Sender : ISender
                 Message = empPayroll.Payroll
             };
 
-            //var sendMessage = await 
-            //    httpClient.PostAsync("posts",
-            //        JsonContent.Create(payrollMessage));
-
-            //empPayrollInfo.Add(new ShippingInfo()
-            //{
-            //    Employee = empPayroll.Name,
-            //    Payroll = message,
-            //    IsSuccess = sendMessage.IsSuccessStatusCode,
-            //    Error = sendMessage.IsSuccessStatusCode == true 
-            //        ? "" 
-            //        : sendMessage.Content.ReadAsAsync<HttpError>().ToString() ?? ""
-            //});
+            var sendMessage = await
+                httpClient.PostAsync("posts",
+                    JsonContent.Create(payrollMessage));
 
             empPayrollInfo.Add(new ShippingInfo()
             {
                 Employee = empPayroll.Name,
                 Payroll = empPayroll.Payroll,
-                IsSuccess = true,
-                Error = ""
+                IsSuccess = sendMessage.IsSuccessStatusCode,
+                Error = sendMessage.IsSuccessStatusCode == true
+                    ? ""
+                    : sendMessage.Content.ReadAsAsync<HttpError>().ToString() ?? ""
             });
         }
 
