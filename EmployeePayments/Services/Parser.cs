@@ -1,5 +1,4 @@
 ﻿using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Bibliography;
 using EmployeePayments.Interfaces;
 using EmployeePayments.Models;
 
@@ -23,8 +22,8 @@ public class Parser : IParser
     {
         using var fileStream = file.OpenReadStream();
 
-        var workbook = new XLWorkbook(file.OpenReadStream());
-        ws = workbook.Worksheet(1);
+        var workbook = new XLWorkbook(fileStream);
+        ws = workbook.Worksheet(0);
 
         bool isGPH = false;
 

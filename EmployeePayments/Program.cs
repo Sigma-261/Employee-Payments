@@ -1,5 +1,8 @@
+using EmployeePayments;
 using EmployeePayments.Interfaces;
 using EmployeePayments.Services;
+using System.Configuration;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +12,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpClient("PaymentBot", httpClient =>
 {
     httpClient.BaseAddress = new Uri("https://mattermost.singularis-lab.com/api/v4/");
-    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "ofxaww1dntr87cbjmw4kp7gqka");
+    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "");
 });
 
 builder.Services.AddTransient<IParser, Parser>();
@@ -21,11 +24,7 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
 }
-
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -34,4 +33,5 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
+Process.Start("cmd", "/C start http://localhost:5000");
 app.Run();
